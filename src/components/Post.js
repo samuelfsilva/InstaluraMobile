@@ -1,93 +1,192 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
-
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import {
   StyleSheet,
-  ScrollView,
   View,
   Text,
-  StatusBar,
   Image,
   Dimensions,
-  Platform,
-  TouchableOpacity
+  TouchableOpacity,
+  TextInput,
 } from 'react-native';
 
 const width = Dimensions.get('screen').width;
 
-export default class Post extends Component<{}> {
-
+export default class Post extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      foto: this.props.foto
-    }
+      foto: this.props.foto,
+      valorComentario: '',
+    };
   }
 
   carregaIcone(likeada) {
-    return likeada ? require('../../recursos/img/s2-checked.png') : require('../../recursos/img/s2.png')
+    return likeada
+      ? require('../../recursos/img/s2-checked.png')
+      : require('../../recursos/img/s2.png');
+  }
+
+  exibeLikes(likers) {
+    if (likers.length <= 0) {
+      return;
+    }
+    return (
+      <Text style={styles.likes}>
+        {likers.length} {likers.length > 1 ? 'curtidas' : 'curtida'}
+      </Text>
+    );
+  }
+
+  exibeLegenda(foto) {
+    if (foto.comentario === '') {
+      return;
+    }
+
+    return (
+      <View style={styles.comentario}>
+        <Text style={styles.tituloComentario}>{foto.loginUsuario}</Text>
+        <Text>{foto.comentario}</Text>
+      </View>
+    );
   }
 
   like() {
-    const fotoAtualizada = {
-      ...this.state.foto,
-      likeada: !this.state.foto.likeada
+    const {foto} = this.state;
+
+    let novaLista = [];
+    if (!foto.likeada) {
+      novaLista = [...foto.likers, {login: 'meuUsuario'}];
+    } else {
+      novaLista = foto.likers.filter(liker => {
+        return liker.login !== 'meuUsuario';
+      });
     }
 
-    this.setState({foto: fotoAtualizada})
+    const fotoAtualizada = {
+      ...foto,
+      likeada: !foto.likeada,
+      likers: novaLista,
+    };
+
+    this.setState({foto: fotoAtualizada});
+  }
+
+  adicionaComentario() {
+    if (this.state.valorComentario === '') {
+      return;
+    }
+
+    const novaLista = [
+      ...this.state.foto.comentarios,
+      {
+        id: this.state.valorComentario,
+        login: 'meuUsuario',
+        texto: this.state.valorComentario,
+      },
+    ];
+
+    const fotoAtualizada = {
+      ...this.state.foto,
+      comentarios: novaLista,
+    };
+
+    this.setState({foto: fotoAtualizada, valorComentario: ''});
+    this.inputComentario.clear();
   }
 
   render() {
-    const { foto } = this.state;
+    const {foto} = this.state;
     return (
       <View>
         <View style={styles.cabecalho}>
-          <Image source={{uri: foto.urlPerfil}} style={styles.fotodeperfil}/>
+          <Image source={{uri: foto.urlPerfil}} style={styles.fotodeperfil} />
           <Text>{foto.loginUsuario}</Text>
         </View>
-        <Image source={{uri: foto.urlFoto}} style={styles.foto}/>
+        <Image source={{uri: foto.urlFoto}} style={styles.foto} />
         <View style={styles.rodape}>
           <TouchableOpacity onPress={this.like.bind(this)}>
-            <Image source={this.carregaIcone(foto.likeada)} style={styles.botaoDeLike}/>
+            <Image
+              source={this.carregaIcone(foto.likeada)}
+              style={styles.botaoDeLike}
+            />
           </TouchableOpacity>
+
+          {this.exibeLikes(foto.likers)}
+          {this.exibeLegenda(foto)}
+
+          {foto.comentarios.map(comentario => (
+            <View style={styles.comentario} key={comentario.id}>
+              <Text style={styles.tituloComentario}>{comentario.login}</Text>
+              <Text>{comentario.texto}</Text>
+            </View>
+          ))}
+          <View style={styles.novoComentario}>
+            <TextInput
+              style={styles.input}
+              placeholder="Adicione um comentário..."
+              ref={input => (this.inputComentario = input)}
+              onChangeText={texto => this.setState({valorComentario: texto})}
+            />
+
+            <TouchableOpacity onPress={this.adicionaComentario.bind(this)}>
+              <Image
+                style={styles.icone}
+                source={require('../../recursos/img/send.png')}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
   }
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    marginTop: 20
-  },
   cabecalho: {
     margin: 10,
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
   },
-  fotodeperfil: {
+  fotoDePerfil: {
     marginRight: 10,
-    borderRadius: 40,
-    width:80,
-    height:80
+    borderRadius: 20,
+    width: 40,
+    height: 40,
   },
   foto: {
-    width:width,
-    height:width
+    width: width,
+    height: width,
   },
   botaoDeLike: {
+    marginBottom: 10,
     height: 40,
-    width: 40
+    width: 40,
   },
   rodape: {
-    margin: 10
-  }
+    margin: 10,
+  },
+  likes: {
+    fontWeight: 'bold',
+  },
+  comentario: {
+    flexDirection: 'row',
+  },
+  tituloComentario: {
+    fontWeight: 'bold',
+    marginRight: 5,
+  },
+  novoComentario: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  input: {
+    flex: 1,
+    height: 40,
+  },
+  icone: {
+    width: 30,
+    height: 30,
+  },
 });
-
-//export default Post;
